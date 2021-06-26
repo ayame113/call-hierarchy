@@ -1,115 +1,9 @@
-import {
-  CompositeDisposable,
-  Disposable,
-  Point,
-  Range,
-  TextEditor,
-} from "atom";
-import { ProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
+import { CompositeDisposable } from "atom";
+import type { Disposable, Point, Range, TextEditor } from "atom";
+import type { ProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
 import type { CallHierarchy, CallHierarchyProvider } from "./call-hierarchy";
 
 type CallHierarchyType = "incoming" | "outgoing";
-
-class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
-  #callHierarchy: CallHierarchy<T> | null | undefined;
-  #dblclickWaitTime = 300;
-  #isDblclick = false;
-  constructor(callHierarchy: CallHierarchy<T> | null | undefined) {
-    super();
-    this.#callHierarchy = callHierarchy;
-  }
-  get isEmpty() {
-    return !this.#callHierarchy || this.#callHierarchy.data.length == 0;
-  }
-  connectedCallback() {
-    if (this.isEmpty) {
-      this.innerHTML = '<div class="call-hierarchy-no-data">No Data.</span>';
-      return;
-    }
-    const result = this.#callHierarchy!.data.map((item, i) => {
-      const el = document.createElement("li");
-      el.setAttribute("title", item.path);
-      const inner = el.appendChild(document.createElement("div"));
-      inner.appendChild(getIcon(item.icon ?? undefined, undefined));
-      inner.insertAdjacentHTML("beforeend", `<span>${item.name}</span>`);
-      inner.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (this.#isDblclick && this.#callHierarchy) {
-          this.#showDocument(this.#callHierarchy.data[i]);
-          return;
-        }
-        this.toggleItemAt(i);
-        window.setTimeout(
-          () => this.#isDblclick = false,
-          this.#dblclickWaitTime,
-        );
-        this.#isDblclick = true;
-      }, false);
-      inner.classList.add("icon");
-      inner.classList.add("icon-chevron-right");
-      return el;
-    });
-    this.appendChild(document.createElement("ul")).append(...result);
-  }
-  async toggleItemAt(i: number) {
-    const el = <HTMLLIElement> this.querySelectorAll(`:scope>ul>li`)[i];
-    const iconElement = el.querySelector(":scope>div");
-    const childCallHierarchy: CallHierarchyViewItem<T> | null = el
-      .querySelector("atom-ide-call-hierarchy-item");
-    if (childCallHierarchy) {
-      if (childCallHierarchy.style.display === "none") {
-        childCallHierarchy.style.display = "";
-        iconElement?.classList.replace(
-          "icon-chevron-right",
-          "icon-chevron-down",
-        );
-      } else {
-        childCallHierarchy.style.display = "none";
-        iconElement?.classList.replace(
-          "icon-chevron-down",
-          "icon-chevron-right",
-        );
-      }
-    } else {
-      el.appendChild(
-        new CallHierarchyViewItem(await this.#callHierarchy?.itemAt(i)),
-      );
-      iconElement?.classList.replace("icon-chevron-right", "icon-chevron-down");
-    }
-  }
-  async toggleAllItem() {
-    const dataLen = this.#callHierarchy?.data.length ?? 0;
-    await Promise.all(
-      [...Array(dataLen).keys()].map((i) => this.toggleItemAt(i)),
-    );
-  }
-  #showDocument = async (
-    { path, range: { start: { row, column } }, selectionRange }: {
-      path: string;
-      range: Range;
-      selectionRange: Range;
-    },
-  ) => {
-    const editor = atom.workspace.getActiveTextEditor();
-    if (editor?.getPath() === path) {
-      //const paneContainer = atom.workspace.paneContainerForItem(editor)
-      //paneContainer?.activate?.()
-      editor.setCursorBufferPosition([row, column]);
-      editor.scrollToBufferPosition([row, column], { center: true });
-      editor.setSelectedBufferRange(selectionRange);
-    } else {
-      const editor: any = await atom.workspace.open(path, {
-        initialLine: row,
-        initialColumn: column,
-        searchAllPanes: true,
-        activatePane: true,
-        activateItem: true,
-      });
-      editor?.setSelectedBufferRange(selectionRange);
-    }
-  };
-}
-customElements.define("atom-ide-call-hierarchy-item", CallHierarchyViewItem);
 
 export class CallHierarchyView extends HTMLElement {
   #subscriptions = new CompositeDisposable();
@@ -117,7 +11,7 @@ export class CallHierarchyView extends HTMLElement {
   // TODO: remove any
   #providerRegistry: ProviderRegistry<any>;
   #outputElement: HTMLDivElement;
-  #_currentType!: CallHierarchyType;
+  #currentType!: CallHierarchyType;
   #debounceTimeout: number | undefined;
   #debounceWaitTime = 300;
   constructor(
@@ -163,9 +57,7 @@ export class CallHierarchyView extends HTMLElement {
           this.#showCallHierarchy(editor, event.newBufferPosition);
         }, this.#debounceWaitTime);
       });
-      if (editor) {
-        this.#showCallHierarchy(editor);
-      }
+      this.#showCallHierarchy(editor);
     }));
   }
 
@@ -178,28 +70,38 @@ export class CallHierarchyView extends HTMLElement {
   }
 
   set currentType(v: CallHierarchyType) {
-    this.#_currentType = v;
+    this.#currentType = v;
     this.setAttribute("current-type", v);
   }
 
   get currentType() {
-    return this.#_currentType;
+    return this.#currentType;
   }
 
   #showCallHierarchy = async (editor?: TextEditor, point?: Point) => {
-    const _editor = editor || atom.workspace.getActiveTextEditor();
-    if (!_editor) {
+    const targetEditor = editor || atom.workspace.getActiveTextEditor();
+    if (!targetEditor) {
+      this.#updateCallHierarchyView();
       return;
     }
-    const _point = point || _editor.getCursorBufferPosition();
+    const targetPoint = point || targetEditor.getCursorBufferPosition();
     // TODO: remove type annotation
     const provider: CallHierarchyProvider | null = this.#providerRegistry
-      .getProviderForEditor(_editor);
-    const newData = await (
-      this.currentType === "incoming"
-        ? provider?.getIncomingCallHierarchy(_editor, _point)
-        : provider?.getOutgoingCallHierarchy(_editor, _point)
+      .getProviderForEditor(targetEditor);
+    if (!provider) {
+      this.#updateCallHierarchyView();
+      return;
+    }
+    this.#updateCallHierarchyView(
+      await (this.currentType === "incoming"
+        ? provider.getIncomingCallHierarchy(targetEditor, targetPoint)
+        : provider.getOutgoingCallHierarchy(targetEditor, targetPoint)),
     );
+  };
+
+  #updateCallHierarchyView = (
+    newData?: CallHierarchy<this["currentType"]> | null | undefined,
+  ) => {
     if ((!newData || newData.data.length == 0)) {
       const prevElement: CallHierarchyViewItem<this["currentType"]> | null =
         this.querySelector("atom-ide-call-hierarchy-item");
@@ -221,6 +123,106 @@ export class CallHierarchyView extends HTMLElement {
   }
 }
 customElements.define("atom-ide-call-hierarchy-view", CallHierarchyView);
+
+class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
+  #callHierarchy: CallHierarchy<T> | null | undefined;
+  #dblclickWaitTime = 300;
+  #isDblclick = false;
+  constructor(callHierarchy: CallHierarchy<T> | null | undefined) {
+    super();
+    this.#callHierarchy = callHierarchy;
+  }
+  get isEmpty() {
+    return !this.#callHierarchy || this.#callHierarchy.data.length == 0;
+  }
+  connectedCallback() {
+    if (this.isEmpty) {
+      this.innerHTML = '<div class="call-hierarchy-no-data">No Data.</span>';
+      return;
+    }
+    const result = this.#callHierarchy!.data.map((item, i) => {
+      // TODO: display `item.detail`
+      const itemEl = document.createElement("li");
+      itemEl.setAttribute("title", item.path);
+      const titleEl = itemEl.appendChild(document.createElement("div"));
+      titleEl.appendChild(getIcon(item.icon ?? undefined, undefined));
+      titleEl.insertAdjacentHTML("beforeend", `<span>${item.name}</span>`);
+      titleEl.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (this.#isDblclick && this.#callHierarchy) {
+          this.#showDocument(this.#callHierarchy.data[i]);
+          return;
+        }
+        this.toggleItemAt(i);
+        window.setTimeout(
+          () => this.#isDblclick = false,
+          this.#dblclickWaitTime,
+        );
+        this.#isDblclick = true;
+      }, false);
+      titleEl.classList.add("icon");
+      titleEl.classList.add("icon-chevron-right");
+      return itemEl;
+    });
+    this.appendChild(document.createElement("ul")).append(...result);
+  }
+  async toggleItemAt(i: number) {
+    const itemEl = <HTMLLIElement> this.querySelectorAll(`:scope>ul>li`)[i];
+    const titleEl = itemEl.querySelector(":scope>div");
+    const childEl: CallHierarchyViewItem<T> | null = itemEl
+      .querySelector("atom-ide-call-hierarchy-item");
+    if (childEl) {
+      if (childEl.style.display === "none") {
+        childEl.style.display = "";
+        titleEl?.classList.replace(
+          "icon-chevron-right",
+          "icon-chevron-down",
+        );
+      } else {
+        childEl.style.display = "none";
+        titleEl?.classList.replace(
+          "icon-chevron-down",
+          "icon-chevron-right",
+        );
+      }
+    } else {
+      itemEl.appendChild(
+        new CallHierarchyViewItem(await this.#callHierarchy?.itemAt(i)),
+      );
+      titleEl?.classList.replace("icon-chevron-right", "icon-chevron-down");
+    }
+  }
+  async toggleAllItem() {
+    const dataLen = this.#callHierarchy?.data.length ?? 0;
+    await Promise.all(
+      [...Array(dataLen).keys()].map((i) => this.toggleItemAt(i)),
+    );
+  }
+  #showDocument = async (
+    { path, range: { start: { row, column } }, selectionRange }: {
+      path: string;
+      range: Range;
+      selectionRange: Range;
+    },
+  ) => {
+    const editor = atom.workspace.getActiveTextEditor();
+    if (editor?.getPath() === path) {
+      editor.setCursorBufferPosition([row, column]);
+      editor.scrollToBufferPosition([row, column], { center: true });
+      editor.setSelectedBufferRange(selectionRange);
+    } else {
+      const editor: any = await atom.workspace.open(path, {
+        initialLine: row,
+        initialColumn: column,
+        searchAllPanes: true,
+        activatePane: true,
+        activateItem: true,
+      });
+      editor?.setSelectedBufferRange(selectionRange);
+    }
+  };
+}
+customElements.define("atom-ide-call-hierarchy-item", CallHierarchyViewItem);
 
 // copy from https://github.com/atom-community/atom-ide-outline/blob/642c9ebbc5de7ca8124f388fe12198b84476d91c/src/outlineView.ts#L470
 
