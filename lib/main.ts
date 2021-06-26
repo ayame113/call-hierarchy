@@ -1,8 +1,8 @@
-import type { CallHierarchyProvider } from "./call-hierarchy";
-
 import { CompositeDisposable } from "atom";
 import { ProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
+
 import { CallHierarchyView } from "./call-hierarchy-view";
+import type { CallHierarchyProvider } from "./call-hierarchy";
 
 // TODO: remove any
 const callHierarchyProviderRegistry = new ProviderRegistry<any>();
