@@ -35,7 +35,6 @@ export function consumeCallHierarchyProvider(provider: CallHierarchyProvider) {
 export function toggleCallHierarchy() {
   const rightDock = atom.workspace.getRightDock();
   let pane = atom.workspace.paneForItem(item);
-  // @ts-ignore
   if (
     pane && pane.getActiveItem() === item &&
     // @ts-ignore (getVisiblePanes is not includes typedef)
