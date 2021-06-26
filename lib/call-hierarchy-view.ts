@@ -1,9 +1,9 @@
 import { CompositeDisposable } from "atom";
 import type { Disposable, Point, Range, TextEditor } from "atom";
 import type { ProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
-import type { CallHierarchy, CallHierarchyProvider } from "./call-hierarchy";
+import type { CallHierarchy, CallHierarchyProvider, CallHierarchyType } from "./call-hierarchy";
 
-type CallHierarchyType = "incoming" | "outgoing";
+
 
 export class CallHierarchyView extends HTMLElement {
   #subscriptions = new CompositeDisposable();
@@ -19,33 +19,17 @@ export class CallHierarchyView extends HTMLElement {
   ) {
     super();
     this.#providerRegistry = providerRegistry;
-    const selectInOrOut = this.appendChild(document.createElement("div"));
-    {
-      const inElement = selectInOrOut.appendChild(
-        document.createElement("div"),
-      );
-      inElement.innerText = "Incoming";
-      inElement.addEventListener("click", () => {
-        this.currentType = "incoming";
-        this.#showCallHierarchy();
-      });
-      inElement.classList.add("icon");
-      inElement.classList.add("icon-alignment-align");
-    }
-    {
-      const outElement = selectInOrOut.appendChild(
-        document.createElement("div"),
-      );
-      outElement.innerText = "Outgoing";
-      outElement.addEventListener("click", () => {
-        this.currentType = "outgoing";
-        this.#showCallHierarchy();
-      });
-      outElement.classList.add("icon");
-      outElement.classList.add("icon-alignment-aligned-to");
-    }
+    const headerElement = this.appendChild(document.createElement("div"));
+    headerElement.innerHTML = `
+      <div class="icon icon-alignment-align">Incoming</div>
+      <div class="icon icon-alignment-aligned-to">Outgoing</div>
+    `
+    headerElement.addEventListener("click", () => {
+      this.toggleCurrentType()
+      this.#showCallHierarchy();
+    });
     this.#outputElement = this.appendChild(document.createElement("div"));
-    this.currentType = "incoming";
+    this.setCurrentType("incoming");
   }
 
   activate() {
@@ -69,13 +53,13 @@ export class CallHierarchyView extends HTMLElement {
     return "link";
   }
 
-  set currentType(v: CallHierarchyType) {
-    this.#currentType = v;
-    this.setAttribute("current-type", v);
+  toggleCurrentType(){
+    this.setCurrentType(this.#currentType==='incoming'?'outgoing':'incoming')
   }
 
-  get currentType() {
-    return this.#currentType;
+  setCurrentType(v: CallHierarchyType) {
+    this.#currentType = v;
+    this.setAttribute("current-type", v);
   }
 
   #showCallHierarchy = async (editor?: TextEditor, point?: Point) => {
@@ -93,17 +77,17 @@ export class CallHierarchyView extends HTMLElement {
       return;
     }
     this.#updateCallHierarchyView(
-      await (this.currentType === "incoming"
+      await (this.#currentType === "incoming"
         ? provider.getIncomingCallHierarchy(targetEditor, targetPoint)
         : provider.getOutgoingCallHierarchy(targetEditor, targetPoint)),
     );
   };
 
   #updateCallHierarchyView = (
-    newData?: CallHierarchy<this["currentType"]> | null | undefined,
+    newData?: CallHierarchy<CallHierarchyType> | null | undefined,
   ) => {
     if ((!newData || newData.data.length == 0)) {
-      const prevElement: CallHierarchyViewItem<this["currentType"]> | null =
+      const prevElement: CallHierarchyViewItem<CallHierarchyType> | null =
         this.querySelector("atom-ide-call-hierarchy-item");
       if (prevElement && prevElement.isEmpty) return;
     }
