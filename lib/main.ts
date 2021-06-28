@@ -36,18 +36,21 @@ export function consumeCallHierarchyProvider(provider: CallHierarchyProvider) {
   return providerDisposer;
 }
 
+/** show and hide the call-hierarchy tab */
 export function toggleCallHierarchy() {
-  const rightDock = atom.workspace.getRightDock();
   let pane = atom.workspace.paneForItem(item);
   if (
     pane && pane.getActiveItem() === item &&
     // @ts-ignore (getVisiblePanes is not includes typedef)
     atom.workspace.getVisiblePanes().includes(pane)
   ) {
+    // destroy if item is visible
     pane.destroyItem(item);
     return;
   }
+  const rightDock = atom.workspace.getRightDock();
   if (!pane) {
+    // add item if it does not exist
     pane = rightDock.getActivePane();
     pane.addItem(item);
   }

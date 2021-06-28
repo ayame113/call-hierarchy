@@ -2,13 +2,13 @@
 
 atom-ide-call-hierarchy-view{
   background: @base-background-color;
+  font-size: 1.4em;
 }
 
 atom-ide-call-hierarchy-view>div:first-child {
   display: flex;
-  font-size: 1.6em;
-  line-height: 2.4em;
-  height: 2.4em;
+  line-height: 36px;
+  height: 36px;
   cursor: pointer;
 }
 atom-ide-call-hierarchy-view>div:first-child>div {
@@ -23,8 +23,7 @@ atom-ide-call-hierarchy-view[current-type="outgoing"]>div:first-child>div:last-c
   border-bottom: 2px solid @background-color-info;
 }
 atom-ide-call-hierarchy-view>div:last-child {
-  height: calc(100% - 2.4em);
-  font-size: 1.4em;
+  height: calc(~"100% - 38px");
   overflow-x: auto;
 }
 
