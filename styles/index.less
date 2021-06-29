@@ -32,19 +32,21 @@ atom-ide-call-hierarchy-item {
   line-height: 1.5em;
   user-select: none;
 }
-atom-ide-call-hierarchy-item ul {
+atom-ide-call-hierarchy-item div {
   padding-left: 0;
 }
 atom-ide-call-hierarchy-item li {
   margin-left: 0;
   list-style-type: none;
 }
-atom-ide-call-hierarchy-item li>div {
+atom-ide-call-hierarchy-item>div>div {
+  display: flex;
+  align-items: center;
   cursor: pointer;
   margin-left: 0;
   padding-left: 0.7em;
 }
-atom-ide-call-hierarchy-item li>div:hover {
+atom-ide-call-hierarchy-item>div>div:hover {
   background-color: @background-color-highlight;
 }
 atom-ide-call-hierarchy-item atom-ide-call-hierarchy-item {
@@ -55,4 +57,13 @@ atom-ide-call-hierarchy-item .call-hierarchy-no-data{
   padding-left: 1.4em;
   cursor: default;
   font-size: 0.8em;
+}
+atom-ide-call-hierarchy-item .tag-deprecated {
+  padding: 0 0.3em;
+  margin: 0 0.2em;
+  border-radius: 5px;
+  background-color: darkred;
+  color: white;
+  font-size: 80%;
+  font-weight: bold;
 }

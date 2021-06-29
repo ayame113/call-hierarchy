@@ -121,14 +121,19 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
     const result = this.#callHierarchy.data.map((item, i) => {
       console.log(item)
       // TODO: display `item.detail`
-      const itemEl = document.createElement("li");
+      const itemEl = document.createElement("div");
       itemEl.setAttribute("title", item.path);
-      const titleEl = itemEl.appendChild(document.createElement("div"));
-      titleEl.classList.add("icon", "icon-chevron-right");
-      titleEl.appendChild(getIcon(item.icon ?? undefined, undefined));
-      titleEl.insertAdjacentHTML("beforeend", `<span>${item.name}</span>`);
+      itemEl.innerHTML = `
+      <div class="icon icon-chevron-right">
+        <div>
+          <span>${item.name}</span>
+          ${item.tags.map(str=>`<span class="tag-${str}">${str}</span>`).join('')}
+        </div>
+      </div>
+      `
+      itemEl.querySelector(':scope>div>div')?.insertAdjacentElement('afterbegin', getIcon(item.icon ?? undefined, undefined));
       let isDblclick = false;
-      titleEl.addEventListener("click", async (e) => {
+      itemEl.querySelector(':scope>div')?.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (isDblclick && this.#callHierarchy) {
           // double-click to jump to the document
@@ -146,11 +151,11 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
       }, false);
       return itemEl;
     });
-    this.appendChild(document.createElement("ul")).append(...result);
+    this.append(...result);
   }
   /** toggle the display of the {i}-th item */
   async toggleItemAt(i: number) {
-    const itemEl = this.querySelectorAll<HTMLLIElement>(`:scope>ul>li`)[i];
+    const itemEl = this.querySelectorAll<HTMLLIElement>(`:scope>div`)[i];
     const titleEl = itemEl.querySelector<HTMLDivElement>(":scope>div");
     const childEl = itemEl.querySelector<CallHierarchyViewItem<T>>("atom-ide-call-hierarchy-item");
     if (childEl) {
