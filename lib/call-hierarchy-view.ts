@@ -32,8 +32,8 @@ export class CallHierarchyView extends HTMLElement {
     `;
     headerElement.addEventListener("click", () => this.#toggleCurrentType());
     this.#outputElement = this.appendChild(document.createElement("div"));
-    this.#currentType = 'incoming';
-    this.setAttribute("current-type", 'incoming');
+    this.#currentType = "incoming";
+    this.setAttribute("current-type", "incoming");
   }
   /** called when the call-hierarchy tab is opened */
   activate() {
@@ -52,10 +52,12 @@ export class CallHierarchyView extends HTMLElement {
   }
   /** toogle between incoming and outgoing displays */
   #toggleCurrentType = () => {
-    this.#currentType = this.#currentType === "incoming" ? "outgoing" : "incoming"
+    this.#currentType = this.#currentType === "incoming"
+      ? "outgoing"
+      : "incoming";
     this.setAttribute("current-type", this.#currentType);
     this.#showCallHierarchy();
-  }
+  };
   /** show call hierarchy for {editor} and {point} */
   #showCallHierarchy = async (editor?: TextEditor, point?: Point) => {
     const targetEditor = editor || atom.workspace.getActiveTextEditor();
@@ -83,7 +85,9 @@ export class CallHierarchyView extends HTMLElement {
   ) => {
     // if the shown data remains empty, it will not change
     if (CallHierarchyViewItem.isEmpty(newData)) {
-      const prevElement = this.querySelector<CallHierarchyViewItem<CallHierarchyType>>("atom-ide-call-hierarchy-item");
+      const prevElement = this.querySelector<
+        CallHierarchyViewItem<CallHierarchyType>
+      >("atom-ide-call-hierarchy-item");
       if (prevElement && prevElement.isEmpty) return;
     }
     // update display
@@ -119,7 +123,6 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
       return;
     }
     const result = this.#callHierarchy.data.map((item, i) => {
-      console.log(item)
       // TODO: display `item.detail`
       const itemEl = document.createElement("div");
       itemEl.setAttribute("title", item.path);
@@ -127,28 +130,39 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
       <div class="icon icon-chevron-right">
         <div>
           <span>${item.name}</span>
-          ${item.tags.map(str=>`<span class="tag-${str}">${str}</span>`).join('')}
+          ${
+        item.tags.map((str) => `<span class="tag-${str}">${str}</span>`).join(
+          "",
+        )
+      }
         </div>
       </div>
-      `
-      itemEl.querySelector(':scope>div>div')?.insertAdjacentElement('afterbegin', getIcon(item.icon ?? undefined, undefined));
+      `;
+      itemEl.querySelector(":scope>div>div")?.insertAdjacentElement(
+        "afterbegin",
+        getIcon(item.icon ?? undefined, undefined),
+      );
       let isDblclick = false;
-      itemEl.querySelector(':scope>div')?.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (isDblclick && this.#callHierarchy) {
-          // double-click to jump to the document
-          this.#showDocument(this.#callHierarchy.data[i]);
-          return;
-        }
-        // single-click to toggle the display of item
-        this.toggleItemAt(i);
-        // enable double click
-        window.setTimeout(
-          () => isDblclick = false,
-          this.#dblclickWaitTime,
-        );
-        isDblclick = true;
-      }, false);
+      itemEl.querySelector(":scope>div")?.addEventListener(
+        "click",
+        async (e) => {
+          e.stopPropagation();
+          if (isDblclick && this.#callHierarchy) {
+            // double-click to jump to the document
+            this.#showDocument(this.#callHierarchy.data[i]);
+            return;
+          }
+          // single-click to toggle the display of item
+          this.toggleItemAt(i);
+          // enable double click
+          window.setTimeout(
+            () => isDblclick = false,
+            this.#dblclickWaitTime,
+          );
+          isDblclick = true;
+        },
+        false,
+      );
       return itemEl;
     });
     this.append(...result);
@@ -157,7 +171,9 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
   async toggleItemAt(i: number) {
     const itemEl = this.querySelectorAll<HTMLLIElement>(`:scope>div`)[i];
     const titleEl = itemEl.querySelector<HTMLDivElement>(":scope>div");
-    const childEl = itemEl.querySelector<CallHierarchyViewItem<T>>("atom-ide-call-hierarchy-item");
+    const childEl = itemEl.querySelector<CallHierarchyViewItem<T>>(
+      "atom-ide-call-hierarchy-item",
+    );
     if (childEl) {
       if (childEl.style.display !== "none") {
         // hide if visible
@@ -209,19 +225,19 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
         searchAllPanes: true,
         activatePane: true,
         activateItem: true,
-      }).then((editor: any)=>editor?.setSelectedBufferRange(selectionRange));
+      }).then((editor: any) => editor?.setSelectedBufferRange(selectionRange));
     }
   };
   /** whether {callHierarchy} data is empty */
   static isEmpty(
-    callHierarchy: CallHierarchy<CallHierarchyType> | null | undefined
+    callHierarchy: CallHierarchy<CallHierarchyType> | null | undefined,
   ): callHierarchy is null | undefined {
     return !callHierarchy || callHierarchy.data.length == 0;
   }
   /** whether data is empty */
   get isEmpty() {
     // call from outside of this class
-    return CallHierarchyViewItem.isEmpty(this.#callHierarchy)
+    return CallHierarchyViewItem.isEmpty(this.#callHierarchy);
   }
 }
 customElements.define("atom-ide-call-hierarchy-item", CallHierarchyViewItem);
