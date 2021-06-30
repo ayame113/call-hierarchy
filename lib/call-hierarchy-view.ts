@@ -130,6 +130,7 @@ class CallHierarchyViewItem<T extends CallHierarchyType> extends HTMLElement {
       <div class="icon icon-chevron-right">
         <div>
           <span>${item.name}</span>
+          <span class="detail">${item.detail?` - ${item.detail}`:''}</span>
           ${
         item.tags.map((str) => `<span class="tag-${str}">${str}</span>`).join(
           "",

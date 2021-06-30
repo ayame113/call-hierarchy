@@ -22,6 +22,11 @@ atom-ide-call-hierarchy-view[current-type="incoming"]>div:first-child>div:first-
 atom-ide-call-hierarchy-view[current-type="outgoing"]>div:first-child>div:last-child {
   border-bottom: 2px solid @background-color-info;
 }
+atom-ide-call-hierarchy-view[current-type="incoming"]>div:first-child>div:last-child:hover,
+atom-ide-call-hierarchy-view[current-type="outgoing"]>div:first-child>div:first-child:hover {
+  background: @background-color-highlight;
+  transition: 0.2s;
+}
 atom-ide-call-hierarchy-view>div:last-child {
   height: calc(~"100% - 38px");
   overflow-x: auto;
@@ -47,7 +52,8 @@ atom-ide-call-hierarchy-item>div>div {
   padding-left: 0.7em;
 }
 atom-ide-call-hierarchy-item>div>div:hover {
-  background-color: @background-color-highlight;
+  background: @background-color-highlight;
+  transition: 0.2s;
 }
 atom-ide-call-hierarchy-item atom-ide-call-hierarchy-item {
   border-left: 1px solid @background-color-highlight;
