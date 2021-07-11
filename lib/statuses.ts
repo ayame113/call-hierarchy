@@ -10,7 +10,6 @@ export const statuses = {
   },
   noResult: {
     title: "No result was found.",
-    description:
-      "The Call Hierarchy could not found the text you entered in the filter bar.",
+    description: "The Call Hierarchy could not found the text you entered in the filter bar.",
   },
-};
+}

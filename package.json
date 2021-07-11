@@ -9,9 +9,13 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
-  "scripts": {},
-  "__atomTestRunner": "./spec/runner",
-  "_atomTestRunner": "atom-jasmine3-test-runner",
+  "scripts": {
+    "format": "prettier --write .",
+    "test.format": "prettier . --check",
+    "lint": "eslint . --fix",
+    "test.lint": "eslint .",
+    "test": "atom --test spec"
+  },
   "dependencies": {
     "atom-ide-base": "^2.6.0",
     "atom-ts-transpiler": "^1.5.3",
@@ -19,8 +23,11 @@
   },
   "devDependencies": {
     "@types/atom": "1.40.10",
-    "@types/node": "^14.14.37"
+    "@types/node": "^14.14.37",
+    "eslint-config-atomic": "^1.16.1",
+    "prettier-config-atomic": "^2.0.5"
   },
+  "prettier": "prettier-config-atomic",
   "atomTranspilers": [
     {
       "transpiler": "atom-ts-transpiler",
