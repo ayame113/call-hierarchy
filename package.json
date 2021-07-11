@@ -10,6 +10,8 @@
     "atom": ">=1.0.0 <2.0.0"
   },
   "scripts": {},
+  "__atomTestRunner": "./spec/runner",
+  "_atomTestRunner": "atom-jasmine3-test-runner",
   "dependencies": {
     "atom-ide-base": "^2.6.0",
     "atom-ts-transpiler": "^1.5.3",

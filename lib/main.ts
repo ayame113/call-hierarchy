@@ -1,4 +1,5 @@
 import { CompositeDisposable } from "atom";
+import type { Disposable } from "atom";
 import { ProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
 
 import { CallHierarchyView } from "./call-hierarchy-view";
@@ -30,9 +31,12 @@ export function deactivate() {
   atom.workspace.paneForItem(item)?.destroyItem(item);
 }
 
-export function consumeCallHierarchyProvider(provider: CallHierarchyProvider) {
+export function consumeCallHierarchyProvider(
+  provider: CallHierarchyProvider,
+): Disposable {
   const providerDisposer = callHierarchyProviderRegistry.addProvider(provider);
   subscriptions.add(providerDisposer);
+  item.showCallHierarchy();
   return providerDisposer;
 }
 
